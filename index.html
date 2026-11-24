@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="sk">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4FA">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Peniaze">
+<meta name="apple-mobile-web-app-title" content="Money">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>Kam idú peniaze</title>
+<title>Where the money goes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -64,7 +64,7 @@ button{cursor:pointer;touch-action:manipulation}
 .eyebrow{color:var(--muted);font-size:14px;font-weight:500}
 .big{font-family:var(--display);font-weight:800;font-size:clamp(40px,12.5vw,56px);line-height:1;letter-spacing:-.035em;color:var(--ink);overflow-wrap:anywhere}
 .big.neg{color:var(--bad)}
-.big .cur{font-size:.5em;letter-spacing:0;margin-left:.12em;vertical-align:.55em;opacity:.85}
+.big .cur{font-size:.5em;letter-spacing:0;margin-right:.08em;vertical-align:.55em;opacity:.85}
 .sub{color:var(--muted);font-size:14px}
 .sub strong{color:var(--ink);font-weight:600}
 .stack{height:14px;border-radius:99px;background:var(--raised);display:flex;overflow:hidden;gap:2px}
@@ -328,7 +328,7 @@ button.pill:hover{border-color:var(--gold)}
   <div class="grab"></div>
   <h3 id="setTitle" data-t="settings"></h3>
   <div style="display:flex;flex-direction:column;gap:18px">
-    <div class="field"><span data-t="lang"></span><div class="seg" id="langSeg"></div></div>
+    
     <div class="field"><span data-t="currency"></span><div class="seg" id="curSeg"></div></div>
     <div class="field">
       <label for="incomeInput" data-t="income"></label>
@@ -346,57 +346,6 @@ button.pill:hover{border-color:var(--gold)}
 (function(){
 "use strict";
 var T={
- sk:{title:"Kam idú peniaze",demoText:"Ukážkové údaje. Takto to vyzerá naplnené.",demoBtn:"Začať s vlastnými",
-  left:"Po zaplatení všetkých platieb ti ostane",perMonth:"mesačne",income:"Príjem",change:"Zmeniť",bills:"Výdavky",license:"Licencia pre 1 osobu. Ďakujeme, že appku nezdieľaš.",
-  saveTitle:"Kde môžeš ušetriť",saveTotalL:"Spolu môžeš ušetriť až",perYear:"ročne",gain:function(v){return "+"+v+" ročne"},
-  tipTitle:"Užitočný tip",nextTip:"Ďalší tip",
-  sOver:function(v){return ["Míňaš viac, ako zarábaš","Každý mesiac ti chýba "+v+". Začni najväčšou kategóriou nižšie a hľadaj platbu, ktorú vieš zrušiť alebo znížiť."]},
-  sSubs:function(n,v,y,top,ty){return ["Predplatné: "+n+" za "+v+" mesačne","Za rok je to "+y+". Prejdi si ich a zruš, čo nepoužívaš. Napríklad "+top+" ťa stojí "+ty+" ročne."]},
-  sCut:function(c,p,v){return ["Zníž "+c+" o 10 %",c+" berie "+p+" % príjmu. Malé zníženie o 10 % je "+v+" mesačne."]},
-  sHousing:function(p){return ["Bývanie je nad odporúčaním","Ide naň "+p+" % príjmu, bežne sa odporúča najviac okolo 30 %. Pri ďalšej zmluve alebo sťahovaní na to mysli."]},
-  sEnergy:function(n){return ["Porovnaj dodávateľa: "+n,"Ceny energií sa medzi dodávateľmi líšia. Porovnanie zaberie pár minút a zmena je zvyčajne bezplatná."]},
-  sPhone:function(n,v){return ["Skontroluj tarifu: "+n,"Platíš "+v+" mesačne. Operátori často ponúkajú lacnejšie tarify, ak sa opýtaš alebo pohrozíš odchodom."]},
-  sInsur:function(n){return ["Pred výročím porovnaj: "+n,"Poistky sa dajú každý rok porovnať a zmeniť. Mesiac pred výročím si vypýtaj ponuky od iných poisťovní."]},
-  sDebt:function(p){return ["Splátky berú "+p+" % príjmu","Over si, či by refinancovanie neznížilo úrok. Pri viacerých úveroch sa oplatí ich zlúčiť."]},
-  sYearly:function(n,v){return ["Odkladaj si na "+n,"Je to ročná platba. Ak si každý mesiac odložíš "+v+", neprekvapí ťa."]},
-  sSave:function(v,y){return ["Odkladaj si 20 % z toho, čo ostane",v+" mesačne pošli hneď po výplate na sporiaci účet. Za rok máš "+y+"."]},
-  sLow:function(p){return ["Ostáva ti len "+p+" % príjmu","Rezerva je malá. Skús nájsť aspoň jednu platbu nižšie, ktorú vieš znížiť."]},
-  sNone:"Zatiaľ nemáš žiadne platby. Pridaj ich a ukážem ti, kde sa dá ušetriť.",
-  tips:["Nastav si trvalý príkaz na sporenie na deň výplaty. Čo neuvidíš na účte, to neminieš.",
-    "Pravidlo 50/30/20: polovica príjmu na nutné výdavky, 30 % na radosti a 20 % na sporenie.",
-    "Pred nákupom nad 50 € počkaj 48 hodín. Ak to stále chceš, kúp to.",
-    "Raz za rok prejdi všetky zmluvy: energie, mobil, poistky. Lojalita sa tu väčšinou neoplatí.",
-    "Rezerva na 3 až 6 mesiacov výdavkov ťa ochráni pri strate práce alebo nečakanej oprave.",
-    "Na potraviny choď so zoznamom a najedený. Nákupy bez plánu bývajú drahšie.",
-    "Skúšobné predplatné si hneď po aktivácii zruš. Do konca obdobia fungujú ďalej.",
-    "Splácaj najprv úver s najvyšším úrokom. Ušetríš najviac na úrokoch."],
-  byCat:"Výdavky podľa kategórií",ofIncome:function(p){return p+" % príjmu"},addTo:function(c){return "Pridať do: "+c},
-  billsN:function(n){return n===1?"1 platba":(n>=2&&n<=4?n+" platby":n+" platieb")},
-  spendShare:function(p){return "Pravidelné platby zoberú <strong>"+p+" %</strong> tvojho príjmu."},
-  noIncome:"Zadaj príjem a uvidíš, koľko ti ostane.",
-  month:"Tento mesiac",stillOut:function(v){return "ešte odíde "+v},allPaid:"Tento mesiac je všetko zaplatené.",
-  nextL:function(d){return d===0?"Dnes":(d===1?"Zajtra":"O "+d+(d<=4?" dni":" dní"))},next:"Najbližšia platba",
-  where:"Kam idú peniaze",list:"Všetky platby",showAll:"Zobraziť všetko",filtered:"Filter:",
-  emptyList:"Zatiaľ tu nič nie je. Pridaj prvú platbu tlačidlom dole.",emptyChart:"Graf sa ukáže po pridaní prvej platby.",
-  addBill:"Pridať platbu",newBill:"Nová platba",editBill:"Upraviť platbu",amount:"Suma jednej platby",name:"Názov",namePh:"Napríklad Nájom",
-  cat:"Kategória",dayQ:"Ktorý deň v mesiaci sa platí?",freqQ:"Ako často sa platí?",startQ:"Kedy je najbližšia platba?",
-  startHint:"Stačí jeden dátum, ďalšie platby si appka dopočíta sama.",
-  freqs:{m:"Mesačne",w1:"Každý týždeň",w2:"Každé 2 týždne",w4:"Každé 4 týždne",y:"Raz za rok"},
-  every:{w1:"každý týždeň",w2:"každé 2 týždne",w4:"každé 4 týždne",y:"raz za rok"},
-  avgMonth:function(v){return "≈ "+v+" mesačne"},nextOn:function(d){return "ďalšia "+d},add:"Pridať",saveB:"Uložiť",del:"Zmazať",delSure:"Naozaj zmazať?",
-  eName:"Napíš názov platby.",eAmount:"Zadaj sumu väčšiu ako 0.",dayOf:function(d){return d+". v mesiaci"},
-  yearly:"ročne",
-  tYear:"Za rok zaplatíš",tYearP:"Toľko odíde len na pravidelné platby za 12 mesiacov.",
-  tSubs:"Predplatné za rok",tSubsP:"Prejdi si ich. Jedno nepoužívané zruš a ušetríš.",
-  tTop:function(c){return c+" za rok"},tTopP:function(p){return "Tvoja najväčšia kategória, "+p+" % všetkých platieb."},
-  tSave:"Môžeš odložiť",tSaveP:function(p){return "Ak odložíš 20 % z toho, čo ostane, za rok máš "+p+"."},
-  tOver:"Chýba ti mesačne",tOverP:"Platby sú vyššie ako príjem. Pozri sa na najväčšiu kategóriu.",
-  tabHome:"Prehľad",tabBills:"Platby",upcoming:"Najbližšie platby",
-  sorts:{cat:"Kategórie",date:"Termín",amount:"Suma"},
-  settings:"Nastavenia",lang:"Jazyk",currency:"Mena",done:"Hotovo",wipe:"Vymazať všetko",wipeSure:"Naozaj vymazať všetko?",
-  privacy:"Tvoje údaje sú len tvoje. Nikam sa neposielajú a ostanú uložené aj po zatvorení.",
-  saving:"Ukladám…",saved:"Všetko uložené",savedLocal:"Uložené v tomto zariadení",saveFail:"Nepodarilo sa uložiť. Skús to o chvíľu znova.",
-  cats:{housing:"Bývanie",food:"Jedlo",transport:"Doprava",subs:"Predplatné",fun:"Zábava",health:"Zdravie",debt:"Splátky",other:"Iné"}},
  en:{title:"Where the money goes",demoText:"Example data. This is how it looks filled in.",demoBtn:"Start with mine",
   left:"After all your bills are paid you keep",perMonth:"per month",income:"Income",change:"Change",bills:"Spending",license:"Licensed for 1 person. Thank you for not sharing the app.",
   saveTitle:"Where you can save",saveTotalL:"Together you could save up to",perYear:"a year",gain:function(v){return "+"+v+" a year"},
@@ -497,15 +446,15 @@ function occ(x,a,b){
 function nextOcc(x){var o=occ(x,TODAYN,TODAYN+400);return o.length?o[0]:null}
 function demoState(){
   function b(n,a,c,d,f,st){return {id:uid(),name:n,amount:a,cat:c,day:d,freq:f||"m",start:st==null?TODAYN:TODAYN+st}}
-  return {lang:"sk",cur:"EUR",income:1850,demo:true,fixed:[
-    b("Nájom",620,"housing",1),b("Energie",95,"housing",15),b("Potraviny",320,"food",5),
-    b("Splátka auta",180,"debt",20),b("Internet a mobil",38,"subs",12),b("Netflix",13,"subs",8),
-    b("Spotify",8,"subs",22),b("Električenka",30,"transport",1),b("Posilňovňa",35,"health",10),b("Kino a výlety",60,"fun",25),
-    b("Upratovanie",40,"housing",1,"w4",6),b("Poistenie auta",240,"transport",1,"y",61)]};
+  return {lang:"en",cur:"EUR",income:1850,demo:true,fixed:[
+    b("Rent",620,"housing",1),b("Electricity & gas",95,"housing",15),b("Groceries",320,"food",5),
+    b("Car loan",180,"debt",20),b("Internet & phone",38,"subs",12),b("Netflix",13,"subs",8),
+    b("Spotify",8,"subs",22),b("Bus pass",30,"transport",1),b("Gym",35,"health",10),b("Movies & days out",60,"fun",25),
+    b("Cleaner",40,"housing",1,"w4",6),b("Car insurance",240,"transport",1,"y",61)]};
 }
 function valid(s){return s&&typeof s==="object"&&Array.isArray(s.fixed)}
 function clean(s){
-  return {lang:s.lang==="en"?"en":"sk",cur:CURS.some(function(c){return c[0]===s.cur})?s.cur:"EUR",
+  return {lang:"en",cur:CURS.some(function(c){return c[0]===s.cur})?s.cur:"EUR",
     income:Math.abs(Number(s.income))||0,demo:!!s.demo,
     fixed:s.fixed.slice(0,300).map(function(x){
       var d=parseInt(x.day,10),st=parseInt(x.start,10);
@@ -555,7 +504,7 @@ function flush(){
 /* ---------- helpers ---------- */
 function t(k){return T[state.lang][k]}
 function L(){return T[state.lang]}
-function locale(){return state.lang==="sk"?"sk-SK":"en-GB"}
+function locale(){return "en-GB"}
 function money(n,d){try{return new Intl.NumberFormat(locale(),{style:"currency",currency:state.cur,maximumFractionDigits:d==null?2:d,minimumFractionDigits:d==null?2:d}).format(n)}catch(e){return n.toFixed(2)+" "+state.cur}}
 function plain(n,d){return new Intl.NumberFormat(locale(),{maximumFractionDigits:d,minimumFractionDigits:d}).format(n)}
 function sym(){var c=CURS.filter(function(c){return c[0]===state.cur})[0];return c?c[1]:state.cur}
@@ -586,8 +535,10 @@ function countTo(node,to,isNeg){
   var from=shown==null?0:shown;shown=to;
   function paint(v){
     node.textContent="";
-    node.appendChild(document.createTextNode(plain(v,0)));
+    var neg=v<0;
+    if(neg)node.appendChild(document.createTextNode("−"));
     node.appendChild(el("span","cur",sym()));
+    node.appendChild(document.createTextNode(plain(Math.abs(v),0)));
   }
   if(reduce||from===to){paint(to);return}
   var start=null,dur=firstPaint?1100:450;
@@ -766,7 +717,7 @@ function disarm(){armed=null;$("del").classList.remove("armed");$("del").textCon
 
 $("fab").addEventListener("click",function(){openSheet(null)});
 $("nextTip").addEventListener("click",function(){tipIdx++;renderTip()});
-$("fab").setAttribute("aria-label",T.sk.addBill);
+$("fab").setAttribute("aria-label",T.en.addBill);
 
 $("veil").addEventListener("click",hide);
 document.addEventListener("keydown",function(e){if(e.key==="Escape")hide()});
@@ -789,9 +740,6 @@ $("clearDemo").addEventListener("click",function(){
   state={lang:state.lang,cur:state.cur,income:0,demo:false,fixed:[]};filter=null;shown=null;persist();render();openSettings();
 });
 function buildSettings(){
-  var ls=$("langSeg");ls.textContent="";
-  [["sk","Slovenčina"],["en","English"]].forEach(function(o){var b=el("button",null,o[1]);b.type="button";b.setAttribute("aria-pressed",String(state.lang===o[0]));
-    b.addEventListener("click",function(){state.lang=o[0];persist();render();buildSettings()});ls.appendChild(b)});
   var cs=$("curSeg");cs.textContent="";
   CURS.forEach(function(o){var b=el("button",null,o[1]);b.type="button";b.setAttribute("aria-pressed",String(state.cur===o[0]));
     b.addEventListener("click",function(){state.cur=o[0];persist();render();buildSettings()});cs.appendChild(b)});
