@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F4FA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Peniaze">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Kam idú peniaze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a pocket app for monthly bills. One column. The hero is the money left after bills;
+   inside it income and spending as two bars on one scale; below, categories that open to show their bills.
+   Single light theme by choice: airy lavender-white with one warm gold accent. */
+:root{
+  --bg:#F6F4FA;
+  --surface:#FFFFFF;
+  --raised:#F1EEF6;
+  --ink:#1E1A2B;
+  --muted:#6E6880;
+  --line:#E7E2EF;
+  --gold:#F0B940;
+  --gold-text:#9C6A00;
+  --gold-ink:#2B1D00;
+  --bad:#D9442F;
+  --good:#1F8F58;
+  --display:"Unbounded","Onest",system-ui,sans-serif;
+  --body:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --c-housing:#3D6FF2; --c-food:#F08A1C; --c-transport:#12A594; --c-subs:#8B5CF6;
+  --c-fun:#E8559A; --c-health:#2FA36B; --c-debt:#E5533D; --c-other:#8A8499;
+  --r:22px;
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:auto}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%;
+  background-image:radial-gradient(120% 60% at 100% -10%,rgba(240,185,64,.18),transparent 60%),radial-gradient(90% 50% at -20% 0%,rgba(139,92,246,.10),transparent 60%);
+  background-repeat:no-repeat;min-height:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.num{font-variant-numeric:tabular-nums}
+.app{max-width:460px;margin:0 auto;padding:max(18px,calc(env(safe-area-inset-top,0px) + 8px)) max(16px,env(safe-area-inset-right,0px)) calc(100px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+
+/* top */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brand small{color:var(--muted);font-size:13px;text-transform:capitalize}
+.brand b{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em}
+.round{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;flex:none}
+.round svg{width:20px;height:20px}
+
+/* hero */
+.hero{position:relative;padding:22px 20px 20px;border-radius:28px;background:linear-gradient(160deg,#FFF4D9 0%,#FFFFFF 62%);border:1px solid #F1E3BF;box-shadow:0 10px 30px rgba(120,90,20,.08);overflow:hidden;display:flex;flex-direction:column;gap:16px}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(240,185,64,.30),transparent 70%);pointer-events:none}
+.eyebrow{color:var(--muted);font-size:14px;font-weight:500}
+.big{font-family:var(--display);font-weight:800;font-size:clamp(40px,12.5vw,56px);line-height:1;letter-spacing:-.035em;color:var(--ink);overflow-wrap:anywhere}
+.big.neg{color:var(--bad)}
+.big .cur{font-size:.5em;letter-spacing:0;margin-left:.12em;vertical-align:.55em;opacity:.85}
+.sub{color:var(--muted);font-size:14px}
+.sub strong{color:var(--ink);font-weight:600}
+.stack{height:14px;border-radius:99px;background:var(--raised);display:flex;overflow:hidden;gap:2px}
+.stack i{display:block;height:100%;width:0}
+@media (prefers-reduced-motion:no-preference){.stack i{transition:width .9s cubic-bezier(.2,.8,.2,1)}}
+.hero-row{display:flex;gap:10px}
+.pill{flex:1;min-width:0;background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;text-align:left}
+.pill span{color:var(--muted);font-size:12.5px}
+.pill b{font-weight:600;font-size:16px;overflow-wrap:anywhere}
+button.pill{cursor:pointer}
+button.pill:hover{border-color:var(--gold)}
+.pill .edit{color:var(--gold-text);font-size:12px;font-weight:500}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 10px rgba(40,30,70,.04);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px}
+.card h2{margin:0;font-family:var(--display);font-weight:500;font-size:15px;letter-spacing:-.01em;text-wrap:balance}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.head .num{color:var(--muted);font-size:14px}
+
+
+/* donut */
+.chart{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.donut{width:156px;height:156px;flex:none;margin:0 auto}
+.donut circle{transition:opacity .2s}
+.donut text{fill:var(--ink)}
+.legend{flex:1 1 170px;min-width:0;display:flex;flex-direction:column;gap:4px;list-style:none;margin:0;padding:0}
+.legend button{width:100%;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;border:0;background:transparent;border-radius:12px;padding:6px 8px 6px 4px;text-align:left;min-height:44px}
+.legend button:hover{background:var(--raised)}
+.legend button[aria-pressed="true"]{background:var(--raised);box-shadow:inset 0 0 0 1px var(--line)}
+.legend .pct{display:block;color:var(--muted);font-size:12px}
+.empty{color:var(--muted);font-size:15px;margin:0}
+
+/* icons */
+.ic{width:36px;height:36px;border-radius:12px;display:grid;place-items:center}
+.ic svg{width:18px;height:18px}
+.ic.sm{width:28px;height:28px;border-radius:9px}
+.ic.sm svg{width:15px;height:15px}
+
+/* insights */
+.insights{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tip{min-width:0;background:var(--raised);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.tip.wide{grid-column:1/-1}
+.tip .k{font-size:12px;color:var(--muted);font-weight:500;line-height:1.25}
+.tip .v{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;overflow-wrap:anywhere;line-height:1.15}
+.tip p{margin:2px 0 0;color:var(--muted);font-size:12.5px;line-height:1.35}
+.tip.warn{background:#FDECEA}.tip.warn .v{color:var(--bad)}
+.tip.good{background:#E7F6EE}.tip.good .v{color:var(--good)}
+
+/* list */
+.filter{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.chip{border:1px solid var(--line);background:var(--raised);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;min-height:34px}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.item{width:100%;display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;padding:10px 4px;border:0;background:transparent;text-align:left;border-radius:14px;min-height:60px}
+.item:hover{background:var(--raised)}
+.list li.it+li.it .item{border-top:1px solid var(--line);border-radius:0}
+.item .nm{min-width:0;font-weight:500;overflow-wrap:anywhere}
+.item .meta{display:block;color:var(--muted);font-size:13px;font-weight:400}
+.item .amt{font-weight:600;text-align:right}
+.item .amt small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+
+/* demo banner */
+.demo{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px dashed rgba(200,140,10,.45);background:rgba(240,185,64,.10);border-radius:18px;padding:12px 14px;font-size:14px}
+.demo[hidden]{display:none}
+.ghost{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;min-height:44px;font-weight:600;font-size:14px}
+
+/* bottom bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:8px max(16px,calc(50% - 214px)) calc(8px + env(safe-area-inset-bottom,0px))}
+.tab{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--muted);min-height:52px;border-radius:14px;padding:4px}
+.tab svg{width:24px;height:24px}
+.tab[aria-current="page"]{color:var(--ink)}
+.tab[aria-current="page"] svg{color:var(--gold-text)}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:5;border:0;background:var(--gold);color:var(--gold-ink);border-radius:99px;padding:0 24px 0 18px;height:56px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;white-space:nowrap;box-shadow:0 12px 28px rgba(156,106,0,.30),0 0 0 6px rgba(246,244,250,.85)}
+.fab svg{width:22px;height:22px}
+.vs{display:flex;flex-direction:column;gap:14px;margin-top:4px}
+.vs-row{display:flex;flex-direction:column;gap:7px}
+.vs-top{display:flex;align-items:baseline;gap:8px;font-size:14px;color:var(--muted);font-weight:500}
+.vs-top b{margin-left:auto;color:var(--ink);font-weight:700;font-size:16px}
+.link{border:0;background:none;padding:6px 2px;margin:-6px 0;color:var(--gold-text);font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.bar{height:18px;border-radius:7px;background:var(--raised);display:flex;gap:2px;overflow:hidden}
+.bar i{display:block;height:100%;width:0}
+.bar i.inc{background:linear-gradient(90deg,#2FA36B,#45C384);border-radius:7px}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .9s cubic-bezier(.2,.8,.2,1)}}
+.total{background:linear-gradient(135deg,#E7F6EE,#F4FBF7);border:1px solid #CDEBDA;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:2px}
+.total span{font-size:13px;color:#2C6B4B;font-weight:500}
+.total b{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-.02em;color:var(--good)}
+.tips{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.tips li{display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start;padding:12px;border-radius:16px;background:var(--raised)}
+.tips li.urgent{background:#FDECEA}
+.tips b{display:block;font-weight:600;line-height:1.3}
+.tips p{margin:4px 0 0;color:var(--muted);font-size:14px;line-height:1.4}
+.tips .gain{display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:var(--good);background:#E7F6EE;border-radius:99px;padding:3px 10px}
+.tipcard{background:linear-gradient(160deg,#F3EEFF,#FFFFFF 70%);border-color:#E4DAFA}
+.tiptext{margin:0;font-size:15.5px;line-height:1.5}
+.acc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.acc-item{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--surface)}
+.acc-item.open{border-color:#DCD5E8;box-shadow:0 4px 14px rgba(40,30,70,.06)}
+.acc-head{width:100%;display:grid;grid-template-columns:36px 1fr 28px;gap:12px;align-items:center;border:0;background:transparent;text-align:left;padding:12px;min-height:72px}
+.acc-mid{display:flex;flex-direction:column;gap:6px;min-width:0}
+.acc-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.acc-top b{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.acc-top .num{font-weight:700}
+.acc-meter{height:6px;border-radius:9px;background:var(--raised);overflow:hidden}
+.acc-meter i{display:block;height:100%;border-radius:9px}
+.acc-sub{font-size:12.5px;color:var(--muted)}
+.chev{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--raised);color:var(--muted)}
+.chev svg{width:16px;height:16px}
+@media (prefers-reduced-motion:no-preference){.chev{transition:transform .2s}}
+.acc-item.open .chev{transform:rotate(180deg);color:var(--ink)}
+.acc-panel{padding:0 12px 10px;border-top:1px solid var(--line);background:#FBFAFD}
+.acc-panel .item{grid-template-columns:1fr auto;padding:10px 4px;min-height:56px}
+.addhere{display:flex;align-items:center;gap:8px;border:1px dashed var(--line);background:transparent;border-radius:12px;width:100%;min-height:44px;padding:0 12px;margin-top:6px;color:var(--gold-text);font-size:14px;font-weight:600}
+.addhere svg{width:18px;height:18px}
+.view{display:flex;flex-direction:column;gap:14px}
+.sortbar{display:flex;gap:6px;background:var(--raised);border-radius:12px;padding:4px}
+.sortbar button{flex:1;border:0;background:transparent;border-radius:9px;min-height:38px;font-size:13px;font-weight:600;color:var(--muted);padding:0 4px}
+.sortbar button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(30,26,43,.12)}
+.group{display:flex;align-items:center;gap:10px;padding:14px 4px 4px;font-weight:600;font-size:14px}
+.group:first-child{padding-top:2px}
+.group span:nth-child(2){flex:1;min-width:0}
+.group .num{color:var(--muted);font-weight:500}
+.upcoming{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.license{text-align:center;color:var(--muted);font-size:12px;margin:-6px 0 0;opacity:.8}
+.saved{text-align:center;color:var(--muted);font-size:13px;min-height:1.3em;margin:0}
+
+/* sheet */
+.veil{position:fixed;inset:0;background:rgba(30,26,43,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:10;opacity:0;pointer-events:none;transition:opacity .2s}
+.veil.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;max-width:460px;margin:0 auto;background:var(--surface);border:1px solid var(--line);box-shadow:0 -10px 40px rgba(30,26,43,.15);border-bottom:0;border-radius:28px 28px 0 0;padding:10px 18px calc(22px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto;transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);visibility:hidden}
+.sheet.open{transform:none;visibility:visible}
+@media (prefers-reduced-motion:reduce){.sheet,.veil{transition:none}}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.sheet h3{margin:0 0 14px;font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.02em}
+.sheet form{display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:7px}
+[hidden]{display:none!important}
+.field>span,.field>label{font-size:13px;color:var(--muted);font-weight:500}
+.input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:13px 14px;font-size:17px;min-height:52px}
+.input:focus{border-color:var(--gold);outline:none}
+.money{position:relative}
+.money .input{font-family:var(--display);font-weight:700;font-size:26px;padding-right:56px;letter-spacing:-.02em}
+.money i{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-style:normal;color:var(--muted);font-weight:600}
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cat{border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--muted);min-height:72px;min-width:0}
+.cat span:last-child{max-width:100%;overflow-wrap:anywhere;text-align:center;line-height:1.2}
+.cat[aria-pressed="true"]{border-color:var(--gold);color:var(--ink);background:#FFF4D9}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.days button{border:1px solid var(--line);background:var(--bg);border-radius:10px;min-height:40px;font-size:14px;font-weight:500;padding:0}
+.days button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--gold-ink);font-weight:700}
+.freqs{display:flex;flex-wrap:wrap;gap:8px}
+.freqs button{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:0 14px;min-height:42px;font-size:14px;font-weight:500}
+.freqs button[aria-pressed="true"]{border-color:var(--gold);background:#FFF4D9;color:var(--gold-text);font-weight:700}
+.err{color:var(--bad);font-size:14px;margin:0;min-height:1.2em}
+.actions{display:flex;gap:10px}
+.sheet .actions{position:sticky;bottom:calc(-22px - env(safe-area-inset-bottom,0px));background:var(--surface);padding:12px 0 calc(22px + env(safe-area-inset-bottom,0px));margin-bottom:calc(-22px - env(safe-area-inset-bottom,0px))}
+.primary{flex:1;border:0;background:var(--gold);color:var(--gold-ink);border-radius:16px;min-height:54px;font-weight:700;font-size:16px}
+.danger{border:1px solid rgba(217,68,47,.35);background:transparent;color:var(--bad);border-radius:16px;min-height:54px;padding:0 18px;font-weight:600}
+.danger.armed{background:var(--bad);color:#FFFFFF;border-color:var(--bad)}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:12px;min-height:46px;font-weight:600}
+.seg button[aria-pressed="true"]{border-color:var(--gold);background:#FFF4D9;color:var(--gold-text)}
+.note{color:var(--muted);font-size:13.5px;margin:0}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div class="brand"><small id="today"></small><b data-t="title"></b></div>
+    <button class="round" id="openSettings" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    </button>
+  </header>
+
+  <div class="demo" id="demo" hidden>
+    <span data-t="demoText"></span>
+    <button class="ghost" id="clearDemo" type="button" data-t="demoBtn"></button>
+  </div>
+
+  <section class="hero" aria-live="polite">
+    <div class="eyebrow" data-t="left"></div>
+    <div class="big num" id="leftVal"></div>
+    <div class="sub" id="leftSub"></div>
+
+    <div class="vs" id="vs">
+      <div class="vs-row">
+        <div class="vs-top"><span data-t="income"></span><button type="button" class="link" id="incomeBtn" data-t="change"></button><b class="num" id="incomeVal"></b></div>
+        <div class="bar"><i class="inc" id="incBar"></i></div>
+      </div>
+      <div class="vs-row">
+        <div class="vs-top"><span data-t="bills"></span><b class="num" id="billsVal"></b></div>
+        <div class="bar" id="expBar"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head"><h2 data-t="byCat"></h2><span class="num" id="billsCount"></span></div>
+    <ul class="acc" id="acc"></ul>
+  </section>
+
+  <section class="card" id="saveCard">
+    <div class="head"><h2 data-t="saveTitle"></h2></div>
+    <div class="total" id="saveTotal"></div>
+    <ul class="tips" id="saveList"></ul>
+  </section>
+
+  <section class="card tipcard">
+    <div class="head"><h2 data-t="tipTitle"></h2><button type="button" class="link" id="nextTip" data-t="nextTip"></button></div>
+    <p class="tiptext" id="tipText"></p>
+  </section>
+
+  <p class="saved" id="saved" role="status"></p>
+  <p class="license" data-t="license"></p>
+</main>
+
+<button class="fab" id="fab" type="button">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  <span data-t="addBill"></span>
+</button>
+
+<div class="veil" id="veil"></div>
+
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="grab"></div>
+  <h3 id="sheetTitle"></h3>
+  <form id="form" novalidate>
+    <div class="field money">
+      <label for="fAmount" data-t="amount"></label>
+      <div class="money"><input class="input num" id="fAmount" inputmode="decimal" autocomplete="off" placeholder="0"><i id="curSym"></i></div>
+    </div>
+    <div class="field">
+      <label for="fName" data-t="name"></label>
+      <input class="input" id="fName" maxlength="40" autocomplete="off">
+    </div>
+    <div class="field">
+      <span data-t="cat"></span>
+      <div class="cats" id="cats" role="group"></div>
+    </div>
+    <div class="field">
+      <span data-t="freqQ"></span>
+      <div class="freqs" id="freqs" role="group"></div>
+    </div>
+    <div class="field" id="dayField">
+      <span data-t="dayQ"></span>
+      <div class="days" id="days" role="group"></div>
+    </div>
+    <div class="field" id="dateField">
+      <label for="fStart" data-t="startQ"></label>
+      <input class="input" id="fStart" type="date">
+      <span class="note" id="dateHint"></span>
+    </div>
+    <p class="err" id="err" role="alert"></p>
+    <div class="actions">
+      <button class="danger" type="button" id="del" hidden></button>
+      <button class="primary" type="submit" id="save"></button>
+    </div>
+  </form>
+</section>
+
+<section class="sheet" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="grab"></div>
+  <h3 id="setTitle" data-t="settings"></h3>
+  <div style="display:flex;flex-direction:column;gap:18px">
+    <div class="field"><span data-t="lang"></span><div class="seg" id="langSeg"></div></div>
+    <div class="field"><span data-t="currency"></span><div class="seg" id="curSeg"></div></div>
+    <div class="field">
+      <label for="incomeInput" data-t="income"></label>
+      <div class="money"><input class="input num" id="incomeInput" inputmode="decimal" autocomplete="off" placeholder="0"><i id="curSym2"></i></div>
+    </div>
+    <p class="note" data-t="privacy"></p>
+    <div class="actions">
+      <button class="danger" type="button" id="wipe"></button>
+      <button class="primary" type="button" id="closeSettings" data-t="done"></button>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+"use strict";
+var T={
+ sk:{title:"Kam idú peniaze",demoText:"Ukážkové údaje. Takto to vyzerá naplnené.",demoBtn:"Začať s vlastnými",
+  left:"Po zaplatení všetkých platieb ti ostane",perMonth:"mesačne",income:"Príjem",change:"Zmeniť",bills:"Výdavky",license:"Licencia pre 1 osobu. Ďakujeme, že appku nezdieľaš.",
+  saveTitle:"Kde môžeš ušetriť",saveTotalL:"Spolu môžeš ušetriť až",perYear:"ročne",gain:function(v){return "+"+v+" ročne"},
+  tipTitle:"Užitočný tip",nextTip:"Ďalší tip",
+  sOver:function(v){return ["Míňaš viac, ako zarábaš","Každý mesiac ti chýba "+v+". Začni najväčšou kategóriou nižšie a hľadaj platbu, ktorú vieš zrušiť alebo znížiť."]},
+  sSubs:function(n,v,y,top,ty){return ["Predplatné: "+n+" za "+v+" mesačne","Za rok je to "+y+". Prejdi si ich a zruš, čo nepoužívaš. Napríklad "+top+" ťa stojí "+ty+" ročne."]},
+  sCut:function(c,p,v){return ["Zníž "+c+" o 10 %",c+" berie "+p+" % príjmu. Malé zníženie o 10 % je "+v+" mesačne."]},
+  sHousing:function(p){return ["Bývanie je nad odporúčaním","Ide naň "+p+" % príjmu, bežne sa odporúča najviac okolo 30 %. Pri ďalšej zmluve alebo sťahovaní na to mysli."]},
+  sEnergy:function(n){return ["Porovnaj dodávateľa: "+n,"Ceny energií sa medzi dodávateľmi líšia. Porovnanie zaberie pár minút a zmena je zvyčajne bezplatná."]},
+  sPhone:function(n,v){return ["Skontroluj tarifu: "+n,"Platíš "+v+" mesačne. Operátori často ponúkajú lacnejšie tarify, ak sa opýtaš alebo pohrozíš odchodom."]},
+  sInsur:function(n){return ["Pred výročím porovnaj: "+n,"Poistky sa dajú každý rok porovnať a zmeniť. Mesiac pred výročím si vypýtaj ponuky od iných poisťovní."]},
+  sDebt:function(p){return ["Splátky berú "+p+" % príjmu","Over si, či by refinancovanie neznížilo úrok. Pri viacerých úveroch sa oplatí ich zlúčiť."]},
+  sYearly:function(n,v){return ["Odkladaj si na "+n,"Je to ročná platba. Ak si každý mesiac odložíš "+v+", neprekvapí ťa."]},
+  sSave:function(v,y){return ["Odkladaj si 20 % z toho, čo ostane",v+" mesačne pošli hneď po výplate na sporiaci účet. Za rok máš "+y+"."]},
+  sLow:function(p){return ["Ostáva ti len "+p+" % príjmu","Rezerva je malá. Skús nájsť aspoň jednu platbu nižšie, ktorú vieš znížiť."]},
+  sNone:"Zatiaľ nemáš žiadne platby. Pridaj ich a ukážem ti, kde sa dá ušetriť.",
+  tips:["Nastav si trvalý príkaz na sporenie na deň výplaty. Čo neuvidíš na účte, to neminieš.",
+    "Pravidlo 50/30/20: polovica príjmu na nutné výdavky, 30 % na radosti a 20 % na sporenie.",
+    "Pred nákupom nad 50 € počkaj 48 hodín. Ak to stále chceš, kúp to.",
+    "Raz za rok prejdi všetky zmluvy: energie, mobil, poistky. Lojalita sa tu väčšinou neoplatí.",
+    "Rezerva na 3 až 6 mesiacov výdavkov ťa ochráni pri strate práce alebo nečakanej oprave.",
+    "Na potraviny choď so zoznamom a najedený. Nákupy bez plánu bývajú drahšie.",
+    "Skúšobné predplatné si hneď po aktivácii zruš. Do konca obdobia fungujú ďalej.",
+    "Splácaj najprv úver s najvyšším úrokom. Ušetríš najviac na úrokoch."],
+  byCat:"Výdavky podľa kategórií",ofIncome:function(p){return p+" % príjmu"},addTo:function(c){return "Pridať do: "+c},
+  billsN:function(n){return n===1?"1 platba":(n>=2&&n<=4?n+" platby":n+" platieb")},
+  spendShare:function(p){return "Pravidelné platby zoberú <strong>"+p+" %</strong> tvojho príjmu."},
+  noIncome:"Zadaj príjem a uvidíš, koľko ti ostane.",
+  month:"Tento mesiac",stillOut:function(v){return "ešte odíde "+v},allPaid:"Tento mesiac je všetko zaplatené.",
+  nextL:function(d){return d===0?"Dnes":(d===1?"Zajtra":"O "+d+(d<=4?" dni":" dní"))},next:"Najbližšia platba",
+  where:"Kam idú peniaze",list:"Všetky platby",showAll:"Zobraziť všetko",filtered:"Filter:",
+  emptyList:"Zatiaľ tu nič nie je. Pridaj prvú platbu tlačidlom dole.",emptyChart:"Graf sa ukáže po pridaní prvej platby.",
+  addBill:"Pridať platbu",newBill:"Nová platba",editBill:"Upraviť platbu",amount:"Suma jednej platby",name:"Názov",namePh:"Napríklad Nájom",
+  cat:"Kategória",dayQ:"Ktorý deň v mesiaci sa platí?",freqQ:"Ako často sa platí?",startQ:"Kedy je najbližšia platba?",
+  startHint:"Stačí jeden dátum, ďalšie platby si appka dopočíta sama.",
+  freqs:{m:"Mesačne",w1:"Každý týždeň",w2:"Každé 2 týždne",w4:"Každé 4 týždne",y:"Raz za rok"},
+  every:{w1:"každý týždeň",w2:"každé 2 týždne",w4:"každé 4 týždne",y:"raz za rok"},
+  avgMonth:function(v){return "≈ "+v+" mesačne"},nextOn:function(d){return "ďalšia "+d},add:"Pridať",saveB:"Uložiť",del:"Zmazať",delSure:"Naozaj zmazať?",
+  eName:"Napíš názov platby.",eAmount:"Zadaj sumu väčšiu ako 0.",dayOf:function(d){return d+". v mesiaci"},
+  yearly:"ročne",
+  tYear:"Za rok zaplatíš",tYearP:"Toľko odíde len na pravidelné platby za 12 mesiacov.",
+  tSubs:"Predplatné za rok",tSubsP:"Prejdi si ich. Jedno nepoužívané zruš a ušetríš.",
+  tTop:function(c){return c+" za rok"},tTopP:function(p){return "Tvoja najväčšia kategória, "+p+" % všetkých platieb."},
+  tSave:"Môžeš odložiť",tSaveP:function(p){return "Ak odložíš 20 % z toho, čo ostane, za rok máš "+p+"."},
+  tOver:"Chýba ti mesačne",tOverP:"Platby sú vyššie ako príjem. Pozri sa na najväčšiu kategóriu.",
+  tabHome:"Prehľad",tabBills:"Platby",upcoming:"Najbližšie platby",
+  sorts:{cat:"Kategórie",date:"Termín",amount:"Suma"},
+  settings:"Nastavenia",lang:"Jazyk",currency:"Mena",done:"Hotovo",wipe:"Vymazať všetko",wipeSure:"Naozaj vymazať všetko?",
+  privacy:"Tvoje údaje sú len tvoje. Nikam sa neposielajú a ostanú uložené aj po zatvorení.",
+  saving:"Ukladám…",saved:"Všetko uložené",savedLocal:"Uložené v tomto zariadení",saveFail:"Nepodarilo sa uložiť. Skús to o chvíľu znova.",
+  cats:{housing:"Bývanie",food:"Jedlo",transport:"Doprava",subs:"Predplatné",fun:"Zábava",health:"Zdravie",debt:"Splátky",other:"Iné"}},
+ en:{title:"Where the money goes",demoText:"Example data. This is how it looks filled in.",demoBtn:"Start with mine",
+  left:"After all your bills are paid you keep",perMonth:"per month",income:"Income",change:"Change",bills:"Spending",license:"Licensed for 1 person. Thank you for not sharing the app.",
+  saveTitle:"Where you can save",saveTotalL:"Together you could save up to",perYear:"a year",gain:function(v){return "+"+v+" a year"},
+  tipTitle:"Useful tip",nextTip:"Next tip",
+  sOver:function(v){return ["You spend more than you earn","You're short "+v+" every month. Start with the biggest category below and look for a bill to cut or cancel."]},
+  sSubs:function(n,v,y,top,ty){return ["Subscriptions: "+n+" for "+v+" a month","That's "+y+" a year. Cancel the ones you don't use. "+top+" alone costs "+ty+" a year."]},
+  sCut:function(c,p,v){return ["Cut "+c+" by 10%",c+" takes "+p+"% of income. A small 10% cut is "+v+" a month."]},
+  sHousing:function(p){return ["Housing is above the usual guideline","It takes "+p+"% of income; around 30% at most is the common advice. Keep it in mind at your next lease or move."]},
+  sEnergy:function(n){return ["Compare suppliers: "+n,"Energy prices differ between suppliers. Comparing takes minutes and switching is usually free."]},
+  sPhone:function(n,v){return ["Check your plan: "+n,"You pay "+v+" a month. Providers often have cheaper plans if you ask or say you're leaving."]},
+  sInsur:function(n){return ["Compare before renewal: "+n,"Policies can be compared and switched every year. Ask other insurers for quotes a month before renewal."]},
+  sDebt:function(p){return ["Loans take "+p+"% of income","Check whether refinancing would lower the interest. With several loans, combining them can pay off."]},
+  sYearly:function(n,v){return ["Put money aside for "+n,"It's paid once a year. Set aside "+v+" each month and it won't catch you out."]},
+  sSave:function(v,y){return ["Save 20% of what's left",v+" a month, moved to savings on payday. In a year you'll have "+y+"."]},
+  sLow:function(p){return ["Only "+p+"% of income is left","That's a thin cushion. Try to find one bill below you can lower."]},
+  sNone:"No bills yet. Add some and I'll show you where you could save.",
+  tips:["Set up a standing order to savings on payday. What you don't see, you don't spend.",
+    "The 50/30/20 rule: half your income for needs, 30% for wants, 20% for savings.",
+    "Before any purchase over 50, wait 48 hours. If you still want it, buy it.",
+    "Once a year go through every contract: energy, phone, insurance. Loyalty rarely pays.",
+    "An emergency fund of 3 to 6 months of spending protects you from job loss or a surprise repair.",
+    "Shop for groceries with a list and on a full stomach. Unplanned shopping costs more.",
+    "Cancel a free trial right after you start it. It keeps working until the end of the period.",
+    "Pay off the loan with the highest interest first. It saves the most interest."],
+  byCat:"Spending by category",ofIncome:function(p){return p+"% of income"},addTo:function(c){return "Add to "+c},
+  billsN:function(n){return n===1?"1 bill":n+" bills"},
+  spendShare:function(p){return "Regular bills take <strong>"+p+"%</strong> of your income."},
+  noIncome:"Add your income to see what you keep.",
+  month:"This month",stillOut:function(v){return v+" still to go"},allPaid:"Everything is paid this month.",
+  nextL:function(d){return d===0?"Today":(d===1?"Tomorrow":"In "+d+" days")},next:"Next bill",
+  where:"Where the money goes",list:"All bills",showAll:"Show all",filtered:"Filter:",
+  emptyList:"Nothing here yet. Add your first bill with the button below.",emptyChart:"The chart appears once you add a bill.",
+  addBill:"Add a bill",newBill:"New bill",editBill:"Edit bill",amount:"Amount per payment",name:"Name",namePh:"For example Rent",
+  cat:"Category",dayQ:"Which day of the month is it paid?",freqQ:"How often is it paid?",startQ:"When is the next payment?",
+  startHint:"One date is enough. The app works out the rest.",
+  freqs:{m:"Monthly",w1:"Every week",w2:"Every 2 weeks",w4:"Every 4 weeks",y:"Once a year"},
+  every:{w1:"every week",w2:"every 2 weeks",w4:"every 4 weeks",y:"once a year"},
+  avgMonth:function(v){return "≈ "+v+" a month"},nextOn:function(d){return "next "+d},add:"Add",saveB:"Save",del:"Delete",delSure:"Really delete?",
+  eName:"Enter a name for the bill.",eAmount:"Enter an amount above 0.",dayOf:function(d){var s=(d%10===1&&d!==11)?"st":(d%10===2&&d!==12)?"nd":(d%10===3&&d!==13)?"rd":"th";return "on the "+d+s},
+  yearly:"a year",
+  tYear:"Over a year you pay",tYearP:"That's what your regular bills cost across 12 months.",
+  tSubs:"Subscriptions a year",tSubsP:"Go through them. Cancel one you don't use and save.",
+  tTop:function(c){return c+" a year"},tTopP:function(p){return "Your biggest category, "+p+"% of all bills."},
+  tSave:"You could save",tSaveP:function(p){return "Put aside 20% of what's left and in a year you'll have "+p+"."},
+  tOver:"Short every month",tOverP:"Bills are higher than income. Start with the biggest category.",
+  tabHome:"Overview",tabBills:"Bills",upcoming:"Coming up",
+  sorts:{cat:"Category",date:"Date",amount:"Amount"},
+  settings:"Settings",lang:"Language",currency:"Currency",done:"Done",wipe:"Delete everything",wipeSure:"Really delete everything?",
+  privacy:"Your data is yours alone. Nothing is sent anywhere, and it stays saved after you close the page.",
+  saving:"Saving…",saved:"All saved",savedLocal:"Saved on this device",saveFail:"Couldn't save. Try again in a moment.",
+  cats:{housing:"Housing",food:"Food",transport:"Transport",subs:"Subscriptions",fun:"Fun",health:"Health",debt:"Loans",other:"Other"}}
+};
+var CATS=["housing","food","transport","subs","debt","health","fun","other"];
+var ICONS={
+ housing:'<path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/>',
+ food:'<path d="M5 8h14l-1.4 10.2a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8zM9 8V6a3 3 0 0 1 6 0v2"/>',
+ transport:'<path d="M5 16V9l2-4h10l2 4v7M5 16h14M5 16v2M19 16v2M5 11h14"/><circle cx="8.5" cy="13.5" r=".6"/><circle cx="15.5" cy="13.5" r=".6"/>',
+ subs:'<path d="M17 4l3 3-3 3M20 7H8a4 4 0 0 0-4 4M7 20l-3-3 3-3M4 17h12a4 4 0 0 0 4-4"/>',
+ debt:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/>',
+ health:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+ fun:'<path d="M12 4l2.3 4.8 5.2.7-3.8 3.6.9 5.2L12 15.8l-4.6 2.5.9-5.2L4.5 9.5l5.2-.7z"/>',
+ other:'<circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/>'
+};
+var CURS=[["EUR","€"],["USD","$"],["GBP","£"],["CZK","Kč"]];
+var KEY="kam-idu-peniaze-v1";
+var $=function(id){return document.getElementById(id)};
+var NOW=new Date(),TODAY=NOW.getDate(),DIM=new Date(NOW.getFullYear(),NOW.getMonth()+1,0).getDate();
+function uid(){return Math.random().toString(36).slice(2,9)}
+
+var FREQ={m:1,w1:52/12,w2:26/12,w4:13/12,y:1/12};
+var STEP={w1:7,w2:14,w4:28};
+function dn(y,m,d){return Math.round(Date.UTC(y,m,d)/864e5)}
+var TODAYN=dn(NOW.getFullYear(),NOW.getMonth(),TODAY);
+var MSTART=dn(NOW.getFullYear(),NOW.getMonth(),1),MEND=MSTART+DIM-1;
+function iso(n){var d=new Date(n*864e5);return d.getUTCFullYear()+"-"+(d.getUTCMonth()<9?"0":"")+(d.getUTCMonth()+1)+"-"+(d.getUTCDate()<10?"0":"")+d.getUTCDate()}
+function fromIso(v){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||"");return m?dn(+m[1],+m[2]-1,+m[3]):null}
+function monthly(x){return x.amount*FREQ[x.freq]}
+/* day numbers (UTC days) on which this bill is paid between a and b inclusive */
+function occ(x,a,b){
+  var out=[];
+  if(x.freq==="m"){
+    for(var y=new Date(a*864e5).getUTCFullYear(),mo=new Date(a*864e5).getUTCMonth();;mo++){
+      var yy=y+Math.floor(mo/12),mm=((mo%12)+12)%12,dim=new Date(Date.UTC(yy,mm+1,0)).getUTCDate();
+      var n=dn(yy,mm,Math.min(x.day,dim));if(n>b)break;if(n>=a)out.push(n);
+    }
+  }else if(x.freq==="y"){
+    var s=new Date(x.start*864e5);
+    for(var y2=new Date(a*864e5).getUTCFullYear();;y2++){
+      var dim2=new Date(Date.UTC(y2,s.getUTCMonth()+1,0)).getUTCDate();
+      var n2=dn(y2,s.getUTCMonth(),Math.min(s.getUTCDate(),dim2));if(n2>b)break;if(n2>=a)out.push(n2);
+    }
+  }else{
+    var st=STEP[x.freq],first=x.start+Math.ceil((a-x.start)/st)*st;
+    for(var n3=first;n3<=b;n3+=st)out.push(n3);
+  }
+  return out;
+}
+function nextOcc(x){var o=occ(x,TODAYN,TODAYN+400);return o.length?o[0]:null}
+function demoState(){
+  function b(n,a,c,d,f,st){return {id:uid(),name:n,amount:a,cat:c,day:d,freq:f||"m",start:st==null?TODAYN:TODAYN+st}}
+  return {lang:"sk",cur:"EUR",income:1850,demo:true,fixed:[
+    b("Nájom",620,"housing",1),b("Energie",95,"housing",15),b("Potraviny",320,"food",5),
+    b("Splátka auta",180,"debt",20),b("Internet a mobil",38,"subs",12),b("Netflix",13,"subs",8),
+    b("Spotify",8,"subs",22),b("Električenka",30,"transport",1),b("Posilňovňa",35,"health",10),b("Kino a výlety",60,"fun",25),
+    b("Upratovanie",40,"housing",1,"w4",6),b("Poistenie auta",240,"transport",1,"y",61)]};
+}
+function valid(s){return s&&typeof s==="object"&&Array.isArray(s.fixed)}
+function clean(s){
+  return {lang:s.lang==="en"?"en":"sk",cur:CURS.some(function(c){return c[0]===s.cur})?s.cur:"EUR",
+    income:Math.abs(Number(s.income))||0,demo:!!s.demo,
+    fixed:s.fixed.slice(0,300).map(function(x){
+      var d=parseInt(x.day,10),st=parseInt(x.start,10);
+      return {id:String(x.id||uid()).slice(0,20),name:String(x.name||"").slice(0,40),amount:Math.abs(Number(x.amount))||0,
+        cat:CATS.indexOf(x.cat)>=0?x.cat:"other",day:d>=1&&d<=31?d:1,
+        freq:FREQ[x.freq]?x.freq:"m",start:isFinite(st)&&st>0?st:TODAYN};
+    })};
+}
+function loadLocal(){try{var raw=localStorage.getItem(KEY);if(raw){var s=JSON.parse(raw);if(valid(s))return clean(s)}}catch(e){}return null}
+var state=loadLocal()||demoState();
+var touched=false,filter=null,editing=null,firstPaint=true,view="home",sortBy="cat";
+
+/* ---------- saving ---------- */
+var ref=null,timer=null,writing=false,dirty=false;
+function status(k){$("saved").textContent=k?t(k):""}
+function persist(){
+  touched=true;
+  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}
+  if(!ref){status("savedLocal");return}
+  dirty=true;status("saving");clearTimeout(timer);timer=setTimeout(flush,700);
+}
+function flush(){
+  if(writing||!ref)return;
+  writing=true;dirty=false;
+  var body=JSON.parse(JSON.stringify(state));
+  var attempt=function(n){return ref.set(body).catch(function(e){
+    if(e&&e.code==="unavailable"&&n<1)return new Promise(function(r){setTimeout(r,800+Math.random()*700)}).then(function(){return attempt(n+1)});
+    throw e;})};
+  attempt(0).then(function(){writing=false;if(dirty)flush();else status("saved")},function(){writing=false;status("saveFail")});
+}
+(function connect(){
+  if(!window.claude||typeof window.claude.use!=="function")return;
+  Promise.all([window.claude.use("db"),window.claude.use("user")]).then(function(r){
+    var db=r[0],user=r[1];if(!db||!user)return null;
+    return Promise.resolve(user.id()).then(function(id){
+      if(!id)return null;
+      var docRef=db.doc("data/users/"+id+"/budget");
+      return docRef.get().then(function(snap){
+        if(snap.exists&&!touched){var d=snap.data();if(valid(d)){state=clean(d);try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}render()}}
+        ref=docRef;
+        if(touched||(!snap.exists&&!state.demo)){dirty=true;flush()}
+      });
+    });
+  }).catch(function(){});
+})();
+
+/* ---------- helpers ---------- */
+function t(k){return T[state.lang][k]}
+function L(){return T[state.lang]}
+function locale(){return state.lang==="sk"?"sk-SK":"en-GB"}
+function money(n,d){try{return new Intl.NumberFormat(locale(),{style:"currency",currency:state.cur,maximumFractionDigits:d==null?2:d,minimumFractionDigits:d==null?2:d}).format(n)}catch(e){return n.toFixed(2)+" "+state.cur}}
+function plain(n,d){return new Intl.NumberFormat(locale(),{maximumFractionDigits:d,minimumFractionDigits:d}).format(n)}
+function sym(){var c=CURS.filter(function(c){return c[0]===state.cur})[0];return c?c[1]:state.cur}
+function parseNum(v){var n=parseFloat(String(v).replace(/\s/g,"").replace(",","."));return isFinite(n)?n:NaN}
+function sum(a){return a.reduce(function(s,x){return s+monthly(x)},0)}
+function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function col(c){return "var(--c-"+c+")"}
+function icon(c,small){
+  var w=el("span","ic"+(small?" sm":""));
+  w.style.background="color-mix(in srgb, "+col(c)+" 13%, white)";w.style.color=col(c);
+  w.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS[c]+'</svg>';
+  return w;
+}
+function effDay(d){return Math.min(d,DIM)}
+
+/* ---------- render ---------- */
+function renderText(){
+  document.documentElement.lang=state.lang;document.title=t("title");
+  document.querySelectorAll("[data-t]").forEach(function(n){n.textContent=t(n.getAttribute("data-t"))});
+  $("openSettings").setAttribute("aria-label",t("settings"));
+  $("today").textContent=NOW.toLocaleDateString(locale(),{weekday:"long",day:"numeric",month:"long"});
+  $("curSym").textContent=$("curSym2").textContent=sym();
+  $("wipe").textContent=t("wipe");$("fab").setAttribute("aria-label",t("addBill"));
+}
+var shown=null;
+function countTo(node,to,isNeg){
+  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var from=shown==null?0:shown;shown=to;
+  function paint(v){
+    node.textContent="";
+    node.appendChild(document.createTextNode(plain(v,0)));
+    node.appendChild(el("span","cur",sym()));
+  }
+  if(reduce||from===to){paint(to);return}
+  var start=null,dur=firstPaint?1100:450;
+  function step(ts){if(!start)start=ts;var p=Math.min((ts-start)/dur,1),e=1-Math.pow(1-p,3);paint(from+(to-from)*e);if(p<1)requestAnimationFrame(step)}
+  requestAnimationFrame(step);
+}
+function renderHero(fT,byCat,parts){
+  var left=state.income-fT;
+  var big=$("leftVal");big.classList.toggle("neg",left<0);countTo(big,Math.round(left),left<0);
+  var sub=$("leftSub");
+  if(state.income>0)sub.innerHTML=L().spendShare(Math.round(fT/state.income*100));else sub.textContent=t("noIncome");
+  $("incomeVal").textContent=money(state.income,0);
+  $("billsVal").textContent=money(fT,0);
+}
+var openCats={};
+function whenText(x){
+  return x.freq==="m"?L().dayOf(x.day):L().every[x.freq]+" · "+L().nextOn(new Date(nextOcc(x)*864e5).toLocaleDateString(locale(),{day:"numeric",month:"numeric",timeZone:"UTC"}));
+}
+function renderVs(fT,byCat,parts){
+  var base=Math.max(state.income,fT,1);
+  var inc=$("incBar");inc.dataset.w=(state.income/base*100)+"%";
+  var bar=$("expBar");bar.textContent="";
+  parts.forEach(function(c){var i=el("i");i.style.background=col(c);i.title=L().cats[c];i.dataset.w=(byCat[c]/base*100)+"%";bar.appendChild(i)});
+  requestAnimationFrame(function(){requestAnimationFrame(function(){
+    inc.style.width=inc.dataset.w;
+    Array.prototype.forEach.call(bar.children,function(i){i.style.width=i.dataset.w});
+  })});
+}
+function renderAcc(fT,byCat,parts){
+  var ul=$("acc");ul.textContent="";
+  $("billsCount").textContent=L().billsN(state.fixed.length);
+  if(!parts.length){var e=el("li");e.appendChild(el("p","empty",t("emptyList")));ul.appendChild(e);return}
+  parts.forEach(function(c){
+    var items=state.fixed.filter(function(x){return x.cat===c}).sort(function(a,b){return monthly(b)-monthly(a)});
+    var open=!!openCats[c];
+    var li=el("li","acc-item"+(open?" open":""));
+    var head=el("button","acc-head");head.type="button";head.setAttribute("aria-expanded",String(open));head.id="h-"+c;head.setAttribute("aria-controls","p-"+c);
+    head.appendChild(icon(c));
+    var mid=el("span","acc-mid");
+    var top=el("span","acc-top");top.appendChild(el("b",null,L().cats[c]));top.appendChild(el("span","num",money(byCat[c],0)));
+    mid.appendChild(top);
+    var meter=el("span","acc-meter");var fill=el("i");fill.style.background=col(c);
+    var share=state.income>0?byCat[c]/state.income*100:byCat[c]/Math.max(fT,1)*100;
+    fill.style.width=Math.min(share,100)+"%";meter.appendChild(fill);mid.appendChild(meter);
+    mid.appendChild(el("span","acc-sub",(state.income>0?L().ofIncome(Math.round(share)):Math.round(share)+" %")+" · "+L().billsN(items.length)));
+    head.appendChild(mid);
+    var chev=el("span","chev");chev.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+    head.appendChild(chev);
+    head.addEventListener("click",function(){openCats[c]=!openCats[c];render()});
+    li.appendChild(head);
+    var panel=el("div","acc-panel");panel.id="p-"+c;panel.setAttribute("role","region");panel.setAttribute("aria-labelledby","h-"+c);panel.hidden=!open;
+    var inner=el("ul","list");
+    items.forEach(function(x){
+      var r=el("li","it"),b=el("button","item");b.type="button";
+      var nm=el("span","nm",x.name);nm.appendChild(el("span","meta",whenText(x)));b.appendChild(nm);
+      var a=el("span","amt num",money(x.amount));
+      a.appendChild(el("small",null,x.freq==="m"?money(x.amount*12,0)+" "+t("yearly"):L().avgMonth(money(monthly(x),0))));b.appendChild(a);
+      b.addEventListener("click",function(){openSheet(x)});
+      r.appendChild(b);inner.appendChild(r);
+    });
+    panel.appendChild(inner);
+    var add=el("button","addhere");add.type="button";
+    add.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    add.appendChild(el("span",null,L().addTo(L().cats[c])));
+    add.addEventListener("click",function(){openSheet(null,c)});
+    panel.appendChild(add);
+    li.appendChild(panel);ul.appendChild(li);
+  });
+}
+var PHONE=/internet|mobil|telef|phone|o2|orange|telekom|4ka|vodafone|tarif/,ENERGY=/energi|energy|elektrin|elektrik|electric|plyn|\bgas\b|teplo|heating/;
+function norm(x){return String(x).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")}
+var tipIdx=Math.floor(Date.now()/864e5);
+function renderSave(fT,byCat,parts){
+  var list=$("saveList");list.textContent="";var tot=$("saveTotal");tot.textContent="";
+  var out=[],left=state.income-fT,I=state.income;
+  if(!state.fixed.length){tot.hidden=true;var li=el("li");li.style.display="block";li.appendChild(el("p",null,t("sNone")));list.appendChild(li);return}
+  function add(c,arr,gain,urgent,prio){out.push({c:c,t:arr[0],p:arr[1],gain:gain,urgent:urgent,prio:prio||0})}
+  if(I>0&&left<0)add("other",L().sOver(money(-left,0)),null,true,100);
+  var subs=state.fixed.filter(function(x){return x.cat==="subs"});
+  if(subs.length){
+    var sT=sum(subs),cand=subs.filter(function(x){return !PHONE.test(norm(x.name))}).sort(function(a,b){return monthly(b)-monthly(a)});
+    if(cand.length){var top=cand[0];add("subs",L().sSubs(subs.length,money(sT,0),money(sT*12,0),top.name,money(monthly(top)*12,0)),monthly(top)*12,false,5)}
+  }
+  var hp=I>0?byCat.housing/I*100:0;
+  if(hp>32)add("housing",L().sHousing(Math.round(hp)),null,false,4);
+  var billTips=0;
+  state.fixed.slice().sort(function(a,b){return monthly(b)-monthly(a)}).forEach(function(x){
+    var n=norm(x.name),before=out.length;
+    if(billTips<2){
+      if(ENERGY.test(n)&&!/enka|listok|mhd|ticket|tram/.test(n))add(x.cat,L().sEnergy(x.name),null,false,3);
+      else if(PHONE.test(n)&&monthly(x)>=15)add(x.cat,L().sPhone(x.name,money(monthly(x),0)),null,false,3);
+      else if(/poist|insur|pzp|havar/.test(n))add(x.cat,L().sInsur(x.name),null,false,3);
+      if(out.length>before)billTips++;
+    }
+    if(x.freq==="y"&&x.amount>=100)add(x.cat,L().sYearly(x.name,money(x.amount/12,0)),null,false,1);
+  });
+  var dp=I>0?byCat.debt/I*100:0;
+  if(dp>=15)add("debt",L().sDebt(Math.round(dp)),null,false,3);
+  var flex=["food","fun","transport","other"].filter(function(c){return byCat[c]>0}).sort(function(a,b){return byCat[b]-byCat[a]});
+  flex.forEach(function(c,i){
+    var p=I>0?byCat[c]/I*100:0;
+    if(p>=5||(!I&&byCat[c]>=50))add(c,L().sCut(L().cats[c],Math.round(p),money(byCat[c]*0.1,0)),byCat[c]*0.1*12,false,i===0?4.5:2);
+  });
+  if(I>0&&left>0&&left/I<0.1)add("other",L().sLow(Math.round(left/I*100)),null,true,6);
+  else if(I>0&&left>0)add("health",L().sSave(money(left*0.2,0),money(left*0.2*12,0)),null,false,0);
+  /* one card per bill name/kind; most useful first */
+  var seen={};out=out.filter(function(o){if(seen[o.t])return false;seen[o.t]=1;return true});
+  out.sort(function(a,b){return (b.prio-a.prio)||((b.gain||0)-(a.gain||0))});
+  out=out.slice(0,5);
+  var g=out.reduce(function(s,o){return s+(o.gain||0)},0);
+  tot.hidden=!(g>0);
+  if(g>0){tot.appendChild(el("span",null,t("saveTotalL")));tot.appendChild(el("b","num",money(g,0)+" "+t("perYear")))}
+  out.forEach(function(o){
+    var li=el("li",o.urgent?"urgent":null);li.appendChild(icon(o.c));
+    var d=el("div");d.appendChild(el("b",null,o.t));d.appendChild(el("p",null,o.p));
+    if(o.gain)d.appendChild(el("span","gain num",L().gain(money(o.gain,0))));
+    li.appendChild(d);list.appendChild(li);
+  });
+}
+function renderTip(){var a=L().tips;$("tipText").textContent=a[((tipIdx%a.length)+a.length)%a.length]}
+function render(){
+  renderText();
+  $("demo").hidden=!state.demo;
+  var fT=sum(state.fixed);
+  var byCat={};CATS.forEach(function(c){byCat[c]=0});state.fixed.forEach(function(x){byCat[x.cat]+=monthly(x)});
+  var parts=CATS.filter(function(c){return byCat[c]>0}).sort(function(a,b){return byCat[b]-byCat[a]});
+  renderHero(fT,byCat,parts);renderVs(fT,byCat,parts);renderAcc(fT,byCat,parts);renderSave(fT,byCat,parts);renderTip();
+  firstPaint=false;
+}
+
+/* ---------- sheets ---------- */
+var openEl=null,lastFocus=null,pick={cat:"housing",day:1,freq:"m"};
+function show(sheet){
+  lastFocus=document.activeElement;openEl=sheet;
+  $("veil").classList.add("open");sheet.classList.add("open");
+  setTimeout(function(){var f=sheet.querySelector("input");if(f&&sheet.id==="settings")return;if(f)f.focus({preventScroll:true})},260);
+}
+function hide(){
+  if(!openEl)return;
+  openEl.classList.remove("open");$("veil").classList.remove("open");openEl=null;
+  disarm();if(lastFocus&&lastFocus.focus)lastFocus.focus({preventScroll:true});
+}
+function buildPickers(){
+  var cats=$("cats");cats.textContent="";
+  CATS.forEach(function(c){
+    var b=el("button","cat");b.type="button";b.setAttribute("aria-pressed",String(pick.cat===c));
+    b.appendChild(icon(c,true));b.appendChild(el("span",null,L().cats[c]));
+    b.addEventListener("click",function(){pick.cat=c;buildPickers()});cats.appendChild(b);
+  });
+  var fr=$("freqs");fr.textContent="";
+  ["m","w4","w2","w1","y"].forEach(function(f){
+    var b=el("button",null,L().freqs[f]);b.type="button";b.setAttribute("aria-pressed",String(pick.freq===f));
+    b.addEventListener("click",function(){pick.freq=f;buildPickers()});fr.appendChild(b);
+  });
+  $("dayField").hidden=pick.freq!=="m";$("dateField").hidden=pick.freq==="m";
+  $("dateHint").textContent=t("startHint");
+  var days=$("days");days.textContent="";
+  for(var d=1;d<=31;d++)(function(d){
+    var b=el("button","num",String(d));b.type="button";b.setAttribute("aria-pressed",String(pick.day===d));
+    b.addEventListener("click",function(){pick.day=d;buildPickers()});days.appendChild(b);
+  })(d);
+}
+function openSheet(item,presetCat){
+  editing=item||null;
+  pick={cat:item?item.cat:(presetCat||"housing"),day:item?item.day:TODAY,freq:item?item.freq:"m"};
+  $("fStart").value=iso(item&&item.freq!=="m"?(nextOcc(item)||item.start):TODAYN);
+  $("sheetTitle").textContent=t(item?"editBill":"newBill");
+  $("fName").value=item?item.name:"";$("fName").placeholder=t("namePh");
+  $("fAmount").value=item?String(item.amount).replace(".",state.lang==="sk"?",":"."):"";
+  $("save").textContent=t(item?"saveB":"add");
+  $("del").hidden=!item;$("del").textContent=t("del");$("err").textContent="";
+  buildPickers();show($("sheet"));
+}
+var armed=null;
+function disarm(){armed=null;$("del").classList.remove("armed");$("del").textContent=t("del");$("wipe").classList.remove("armed");$("wipe").textContent=t("wipe")}
+
+$("fab").addEventListener("click",function(){openSheet(null)});
+$("nextTip").addEventListener("click",function(){tipIdx++;renderTip()});
+$("fab").setAttribute("aria-label",T.sk.addBill);
+
+$("veil").addEventListener("click",hide);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")hide()});
+$("form").addEventListener("submit",function(e){
+  e.preventDefault();
+  var amount=parseNum($("fAmount").value),name=$("fName").value.trim();
+  if(!(amount>0)){$("err").textContent=t("eAmount");$("fAmount").focus();return}
+  if(!name){$("err").textContent=t("eName");$("fName").focus();return}
+  var st=fromIso($("fStart").value);if(st==null)st=TODAYN;
+  var data={name:name.slice(0,40),amount:Math.round(amount*100)/100,cat:pick.cat,day:pick.freq==="m"?pick.day:new Date(st*864e5).getUTCDate(),freq:pick.freq,start:st};
+  if(editing){var x=state.fixed.filter(function(y){return y.id===editing.id})[0];if(x){x.name=data.name;x.amount=data.amount;x.cat=data.cat;x.day=data.day;x.freq=data.freq;x.start=data.start}}
+  else{data.id=uid();state.fixed.push(data)}
+  state.demo=false;persist();hide();render();
+});
+$("del").addEventListener("click",function(){
+  if(armed!=="del"){armed="del";this.classList.add("armed");this.textContent=t("delSure");return}
+  var id=editing&&editing.id;state.fixed=state.fixed.filter(function(y){return y.id!==id});persist();hide();render();
+});
+$("clearDemo").addEventListener("click",function(){
+  state={lang:state.lang,cur:state.cur,income:0,demo:false,fixed:[]};filter=null;shown=null;persist();render();openSettings();
+});
+function buildSettings(){
+  var ls=$("langSeg");ls.textContent="";
+  [["sk","Slovenčina"],["en","English"]].forEach(function(o){var b=el("button",null,o[1]);b.type="button";b.setAttribute("aria-pressed",String(state.lang===o[0]));
+    b.addEventListener("click",function(){state.lang=o[0];persist();render();buildSettings()});ls.appendChild(b)});
+  var cs=$("curSeg");cs.textContent="";
+  CURS.forEach(function(o){var b=el("button",null,o[1]);b.type="button";b.setAttribute("aria-pressed",String(state.cur===o[0]));
+    b.addEventListener("click",function(){state.cur=o[0];persist();render();buildSettings()});cs.appendChild(b)});
+  if(document.activeElement!==$("incomeInput"))$("incomeInput").value=state.income?String(state.income).replace(".",state.lang==="sk"?",":"."):"";
+}
+function openSettings(){buildSettings();show($("settings"))}
+$("openSettings").addEventListener("click",openSettings);
+$("incomeBtn").addEventListener("click",function(){openSettings();setTimeout(function(){$("incomeInput").focus({preventScroll:true});$("incomeInput").select()},280)});
+$("closeSettings").addEventListener("click",hide);
+$("incomeInput").addEventListener("input",function(e){var n=parseNum(e.target.value);state.income=isNaN(n)?0:Math.round(Math.abs(n)*100)/100;state.demo=false;persist();render()});
+$("incomeInput").addEventListener("keydown",function(e){if(e.key==="Enter")hide()});
+$("wipe").addEventListener("click",function(){
+  if(armed!=="wipe"){armed="wipe";this.classList.add("armed");this.textContent=t("wipeSure");return}
+  state={lang:state.lang,cur:state.cur,income:0,demo:false,fixed:[]};filter=null;shown=null;persist();hide();render();
+});
+
+render();
+/* Offline support when the app runs from its own web address (not inside Claude). */
+try{
+  if("serviceWorker" in navigator&&location.protocol==="https:"&&window.top===window.self&&!/claude\.ai|claudeusercontent/.test(location.hostname)){
+    window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
+  }
+}catch(e){}
+})();
+</script>
+</body>
+</html>
